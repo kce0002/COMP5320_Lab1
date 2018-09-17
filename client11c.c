@@ -21,6 +21,7 @@ int main(int argc, char **argv) {
 	}
 	
 	char numbers[NUM_AMOUNT + 1][MAXDIGITS + 1];
+	char numbersReceived[NUM_AMOUNT + 1][MAXDIGITS + 1];
 	int i;
 	char temp[MAXDIGITS + 1];
 	int socketfd;
@@ -49,6 +50,23 @@ int main(int argc, char **argv) {
 		sendto(socketfd, (char *) numbers[i], strlen(numbers[i]), MSG_CONFIRM, (struct sockaddr *) &servaddr, sizeof(servaddr));
 	}
 
+	i = 0;	
+	// This will likely fail if 10000 doesnt get received
+	// Currently stays as an infinite loop
+	// Maybe do the recvfrom in the loop conditional statement
+	/*while (strcmp("10000\0", numbersReceived[i]) != 0) {
+
+	
+		n = recvfrom(socketfd, (char *) numbersReceived[i], MAXDIGITS, MSG_WAITALL, (struct sockaddr *) &servaddr, &servlen);
+		printf("Server: %s, index: %d\n", numbersReceived[i], i);
+		i++;
+	}*/
+
+	for (i = 0; i < NUM_AMOUNT; i++) {
+		n = recvfrom(socketfd, (char *) numbersReceived[i], MAXDIGITS, MSG_WAITALL, (struct sockaddr *) &servaddr, &servlen);
+		printf("Server: %s, index: %d\n", numbersReceived[i], i);
+		
+	}
 	close(socketfd);
 
 
