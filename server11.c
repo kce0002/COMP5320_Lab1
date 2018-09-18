@@ -30,7 +30,6 @@ int main() {
 	struct sockaddr_in cliaddr, servaddr;
 	int socketfd, n;
 	socklen_t clilen;
-	char buf[MAXLINE];
 	
 	// Create the UDP socket:
 	socketfd = socket(AF_INET, SOCK_DGRAM, 0);	
@@ -46,11 +45,13 @@ int main() {
 	// Run until interrupted:
 	while (1) {
 		// Wait for UDP message:
+		char buf[MAXLINE];
 		n = recvfrom(socketfd, (char *)buf, MAXLINE, MSG_WAITALL, (struct sockaddr *) &cliaddr, &clilen);
 		buf[n] = '\0';
 		printf("Client: %s\n", buf);
 		
 		// Send message back to client:
+//		sleep(1);
 		sendto(socketfd, (char *)buf, MAXLINE, MSG_CONFIRM, (struct sockaddr *) &cliaddr, clilen);
 	}
 
