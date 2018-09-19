@@ -26,6 +26,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <netdb.h>
 
 // Constants:
 #define SERV_PORT 10010
@@ -42,16 +43,22 @@ int main(int argc, char **argv) {
 	// Variable declarations:
 	int socketfd;
 	int n;
-	int servlen;
+	socklen_t servlen;
 	struct sockaddr_in servaddr;
 	char sendline[MAXLINE], recvline[MAXLINE];
 	struct timeval start, end;
+	struct hostent *he;
 	int rtt;
 	
 	// Prompt user for message:
 	printf("\nEnter message to be sent to server: ");
 	fgets(sendline, 1024, stdin);
-
+	
+	if ((he = gethostbyname(argv[1])) == NULL) {
+		perror("gethostbyname");
+		exit(1);
+	}
+	
 	// Create the UDP socket:
 	if ((socketfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		perror("Problem in creating the socket");
@@ -61,7 +68,8 @@ int main(int argc, char **argv) {
 	// Prepare additional socket information:
 	memset(&servaddr, 0, sizeof(servaddr));
 	servaddr.sin_family = AF_INET;
-	servaddr.sin_addr.s_addr = inet_addr(argv[1]);
+	//servaddr.sin_addr.s_addr = inet_addr(argv[1]);
+	servaddr.sin_addr = *((struct in_addr *)he->h_addr);
 	servaddr.sin_port = htons(SERV_PORT);
 	
 	gettimeofday(&start, NULL); // Start "timer"

@@ -7,6 +7,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <netdb.h>
 
 #define SERV_PORT 10010
 #define MAXLINE 1024
@@ -16,7 +17,7 @@
 int main(int argc, char **argv) {
 	
 	if (argc != 2) {
-		perror("Usage: UDPClient <IP address of the server>");
+		perror("Usage: UDPClient <server hostname>");
 		exit(1);
 	}
 	
@@ -26,8 +27,11 @@ int main(int argc, char **argv) {
 	char temp[MAXDIGITS + 1];
 	int socketfd;
 	int n;
-	int servlen;
+	socklen_t servlen;
 	struct sockaddr_in servaddr;
+	struct hostent *he;
+	int numSent = 0;
+	int numRcvd = 0;
 	
 	for (i = 1; i <= NUM_AMOUNT; i++) {
 		sprintf(temp, "%d", i);
@@ -35,6 +39,11 @@ int main(int argc, char **argv) {
 	}
 	numbers[NUM_AMOUNT][MAXDIGITS] = '\0';
 	
+	if ((he = gethostbyname(argv[1])) == NULL) {
+		perror("gethostbyname");
+		exit(1);
+	}
+
 	if ((socketfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
 		perror("Problem in creating the socket");
 		exit(2);
@@ -42,15 +51,24 @@ int main(int argc, char **argv) {
 
 	memset(&servaddr, 0, sizeof(servaddr));
 	servaddr.sin_family = AF_INET;
-	servaddr.sin_addr.s_addr = inet_addr(argv[1]);
+	//servaddr.sin_addr.s_addr = inet_addr(argv[1]);
+	servaddr.sin_addr = *((struct in_addr *)he->h_addr);
 	servaddr.sin_port = htons(SERV_PORT);
 	
 	for (i = 0; i < NUM_AMOUNT; i++) {
 		printf("Sending %s\n", numbers[i]);
-		sendto(socketfd, (char *) numbers[i], strlen(numbers[i]), MSG_CONFIRM, (struct sockaddr *) &servaddr, sizeof(servaddr));
+
+		if (sendto(socketfd, (char *) numbers[i], strlen(numbers[i]), MSG_CONFIRM, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0) {
+			perror("Error in sendto");
+			exit(3);
+		}
+		else {
+			numSent++;
+			printf("#Sent: %d\n", numSent);
+		}
 	}
 
-	i = 0;	
+	//i = 0;	
 	// This will likely fail if 10000 doesnt get received
 	// Currently stays as an infinite loop
 	// Maybe do the recvfrom in the loop conditional statement
@@ -63,12 +81,25 @@ int main(int argc, char **argv) {
 	}*/
 
 	for (i = 0; i < NUM_AMOUNT; i++) {
-		n = recvfrom(socketfd, (char *) numbersReceived[i], MAXDIGITS, MSG_WAITALL, (struct sockaddr *) &servaddr, &servlen);
-		printf("Server: %s, index: %d\n", numbersReceived[i], i);
 		
+		if ((n = recvfrom(socketfd, (char *) numbersReceived[i], MAXDIGITS, MSG_WAITALL, NULL, NULL/*(struct sockaddr *) &servaddr, &servlen*/)) < 0) {
+			perror("Error in recvfrom");
+			exit(4);
+		}
+		else {
+			numRcvd++;
+			printf("#Recvd: %d\n", numRcvd);
+		}
+		if (n >= MAXDIGITS) {
+			printf("!!!!!!!!!!!!!!\n");
+		}
+		printf("Server: %s, index: %d\n", numbersReceived[i], i);
+		// This is NOT a full proof method for ending the loop
+		if (strcmp("10000\0", numbersReceived[i]) == 0) {
+			break;
+		}		
 	}
 	close(socketfd);
-
 
 
 	return 0;

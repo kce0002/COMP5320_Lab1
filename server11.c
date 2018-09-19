@@ -30,7 +30,8 @@ int main() {
 	struct sockaddr_in cliaddr, servaddr;
 	int socketfd, n;
 	socklen_t clilen;
-	
+	int numSent = 0;
+	int numRcvd = 0;	
 	// Create the UDP socket:
 	socketfd = socket(AF_INET, SOCK_DGRAM, 0);	
 	
@@ -46,13 +47,37 @@ int main() {
 	while (1) {
 		// Wait for UDP message:
 		char buf[MAXLINE];
-		n = recvfrom(socketfd, (char *)buf, MAXLINE, MSG_WAITALL, (struct sockaddr *) &cliaddr, &clilen);
+		clilen = sizeof(cliaddr);
+		if ((n = recvfrom(socketfd, (char *)buf, MAXLINE, MSG_WAITALL, (struct sockaddr *) &cliaddr, &clilen)) < 0) {
+			perror("Error in recvfrom");
+			exit(1);
+		}
+		else {
+			numRcvd++;
+			printf("#Received: %d\n", numRcvd);
+		}
+		if (n >= MAXLINE) {
+			printf("!!!!!!!!!!!!\n");
+		}
 		buf[n] = '\0';
 		printf("Client: %s\n", buf);
+		cliaddr.sin_family = AF_INET;
 		
 		// Send message back to client:
 //		sleep(1);
-		sendto(socketfd, (char *)buf, MAXLINE, MSG_CONFIRM, (struct sockaddr *) &cliaddr, clilen);
+		//sendto(socketfd, (char *)buf, n/*MAXLINE*/, /*MSG_CONFIRM*/MSG_DONTWAIT, (struct sockaddr *) &cliaddr, clilen);
+		printf("Sending: %s\n", buf);
+		if (sendto(socketfd, (char *)buf, n/*MAXLINE*/, MSG_CONFIRM, (struct sockaddr *) &cliaddr, clilen) < 0) {
+			perror("error in sendto");
+			exit(2);
+
+		}
+		else {
+			numSent++;
+			printf("#Sent: %d\n", numSent);
+		}
+		printf("SENT: %s\n", buf);
+		bzero(buf, MAXLINE);
 	}
 
 	return 0;
