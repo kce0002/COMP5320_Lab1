@@ -32,6 +32,7 @@ int main(int argc, char **argv) {
 	struct hostent *he;
 	int numSent = 0;
 	int numRcvd = 0;
+	int pid;
 	
 	for (i = 1; i <= NUM_AMOUNT; i++) {
 		sprintf(temp, "%d", i);
@@ -48,25 +49,71 @@ int main(int argc, char **argv) {
 		perror("Problem in creating the socket");
 		exit(2);
 	}
-
 	memset(&servaddr, 0, sizeof(servaddr));
 	servaddr.sin_family = AF_INET;
 	//servaddr.sin_addr.s_addr = inet_addr(argv[1]);
 	servaddr.sin_addr = *((struct in_addr *)he->h_addr);
 	servaddr.sin_port = htons(SERV_PORT);
-	
-	for (i = 0; i < NUM_AMOUNT; i++) {
-		printf("Sending %s\n", numbers[i]);
 
-		if (sendto(socketfd, (char *) numbers[i], strlen(numbers[i]), MSG_CONFIRM, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0) {
-			perror("Error in sendto");
-			exit(3);
-		}
-		else {
-			numSent++;
-			printf("#Sent: %d\n", numSent);
-		}
+	pid = fork();
+	
+	// Child - Receive data
+	if (pid == 0) {
+		for (i = 0; i < NUM_AMOUNT; i++) {
+		//i = 0;
+		//while(i < NUM_AMOUNT) {
+			servlen = sizeof(servaddr);	
+			if ((n = recvfrom(socketfd, (char *) numbersReceived[i], MAXDIGITS, MSG_WAITALL,(struct sockaddr *) &servaddr, &servlen)) < 0) {
+				perror("Error in recvfrom");
+				exit(4);
+			}
+			//else {
+				//i++;
+			//	numRcvd++;
+			//	printf("#Recvd: %d\n", numRcvd);
+			//}
+			//if (n >= MAXDIGITS) {
+			//	printf("!!!!!!!!!!!!!!\n");
+			//}
+			//numbersReceived[NUM_AMOUNT][MAXDIGITS] = '\0';
+			printf("Server: %s, index: %d\n", numbersReceived[i], i);
+			// This is NOT a full proof method for ending the loop
+			if (strcmp("10000\0", numbersReceived[i]) == 0) {
+				break;
+			}		
+		}	
 	}
+	// Parent - Send data
+	else {
+		for (i = 0; i < NUM_AMOUNT; i++) {
+			printf("Sending %s\n", numbers[i]);
+
+			if (sendto(socketfd, (char *) numbers[i], strlen(numbers[i]), MSG_CONFIRM, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0) {
+				perror("Error in sendto");
+				exit(3);
+			}
+			/*else {
+				numSent++;
+				printf("#Sent: %d\n", numSent);
+			}*/
+		}
+
+
+	}
+
+	
+//	for (i = 0; i < NUM_AMOUNT; i++) {
+//		printf("Sending %s\n", numbers[i]);
+//
+//		if (sendto(socketfd, (char *) numbers[i], strlen(numbers[i]), MSG_CONFIRM, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0) {
+//			perror("Error in sendto");
+//			exit(3);
+//		}
+//		/*else {
+//			numSent++;
+//			printf("#Sent: %d\n", numSent);
+//		}*/
+//	}
 
 	//i = 0;	
 	// This will likely fail if 10000 doesnt get received
@@ -80,25 +127,29 @@ int main(int argc, char **argv) {
 		i++;
 	}*/
 
-	for (i = 0; i < NUM_AMOUNT; i++) {
-		
-		if ((n = recvfrom(socketfd, (char *) numbersReceived[i], MAXDIGITS, MSG_WAITALL, NULL, NULL/*(struct sockaddr *) &servaddr, &servlen*/)) < 0) {
-			perror("Error in recvfrom");
-			exit(4);
-		}
-		else {
-			numRcvd++;
-			printf("#Recvd: %d\n", numRcvd);
-		}
-		if (n >= MAXDIGITS) {
-			printf("!!!!!!!!!!!!!!\n");
-		}
-		printf("Server: %s, index: %d\n", numbersReceived[i], i);
-		// This is NOT a full proof method for ending the loop
-		if (strcmp("10000\0", numbersReceived[i]) == 0) {
-			break;
-		}		
-	}
+//	for (i = 0; i < NUM_AMOUNT; i++) {
+//	//i = 0;
+//	//while(i < NUM_AMOUNT) {
+//		servlen = sizeof(servaddr);	
+//		if ((n = recvfrom(socketfd, (char *) numbersReceived[i], MAXDIGITS, MSG_WAITALL,(struct sockaddr *) &servaddr, &servlen)) < 0) {
+//			perror("Error in recvfrom");
+//			exit(4);
+//		}
+//		/*else {
+//			//i++;
+//			numRcvd++;
+//			printf("#Recvd: %d\n", numRcvd);
+//		}*/
+//		/*if (n >= MAXDIGITS) {
+//			printf("!!!!!!!!!!!!!!\n");
+//		}*/
+//		//numbersReceived[NUM_AMOUNT][MAXDIGITS] = '\0';
+//		printf("Server: %s, index: %d\n", numbersReceived[i], i);
+//		// This is NOT a full proof method for ending the loop
+//		if (strcmp("10000\0", numbersReceived[i]) == 0) {
+//			break;
+//		}		
+//	}
 	close(socketfd);
 
 

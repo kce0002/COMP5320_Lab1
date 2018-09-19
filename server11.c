@@ -52,13 +52,13 @@ int main() {
 			perror("Error in recvfrom");
 			exit(1);
 		}
-		else {
+		/*else {
 			numRcvd++;
 			printf("#Received: %d\n", numRcvd);
 		}
 		if (n >= MAXLINE) {
 			printf("!!!!!!!!!!!!\n");
-		}
+		}*/
 		buf[n] = '\0';
 		printf("Client: %s\n", buf);
 		cliaddr.sin_family = AF_INET;
@@ -72,11 +72,11 @@ int main() {
 			exit(2);
 
 		}
-		else {
+		/*else {
 			numSent++;
 			printf("#Sent: %d\n", numSent);
 		}
-		printf("SENT: %s\n", buf);
+		printf("SENT: %s\n", buf);*/
 		bzero(buf, MAXLINE);
 	}
 
