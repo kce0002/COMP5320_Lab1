@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
 	int32_t seqNum = 0;
 	long unsigned int timestamp;
 	const unsigned int MAXSEQNUM = (long unsigned int) pow(2, 32) - 1;
-	seqNum = (long unsigned int) pow(2, 32) - 3;
+	//seqNum = (long unsigned int) pow(2, 32) - 3;
 	if ((he = gethostbyname(argv[1])) == NULL) {
 		perror("Error in resolving server IP Address.");
 		exit(2);
