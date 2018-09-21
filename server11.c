@@ -9,7 +9,6 @@
  * receives a message, it sends it back to the client.
  *
  */
-// TODO: Figure out why first attempt fails.
 
 
 // Library includes:
@@ -30,8 +29,8 @@ int main() {
 	struct sockaddr_in cliaddr, servaddr;
 	int socketfd, n;
 	socklen_t clilen;
-	int numSent = 0;
-	int numRcvd = 0;	
+	//int numSent = 0;
+	//int numRcvd = 0;	
 	// Create the UDP socket:
 	socketfd = socket(AF_INET, SOCK_DGRAM, 0);	
 	
@@ -60,7 +59,7 @@ int main() {
 			printf("!!!!!!!!!!!!\n");
 		}*/
 		buf[n] = '\0';
-		printf("Client: %s\n", buf);
+		printf("Client: %s\n", buf + 14);
 		cliaddr.sin_family = AF_INET;
 		
 		// Send message back to client:

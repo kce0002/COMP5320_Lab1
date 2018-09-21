@@ -30,8 +30,8 @@ int main(int argc, char **argv) {
 	socklen_t servlen;
 	struct sockaddr_in servaddr;
 	struct hostent *he;
-	int numSent = 0;
-	int numRcvd = 0;
+	//int numSent = 0;
+	//int numRcvd = 0;
 	int pid;
 	
 	for (i = 1; i <= NUM_AMOUNT; i++) {
