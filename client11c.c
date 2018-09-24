@@ -22,8 +22,8 @@ int main(int argc, char **argv) {
 	int16_t msgLength;
 	int32_t seqNum = 1;
 	long unsigned int timestamp;
-	char *sendPacket;
-	char *receivePacket;
+	char sendPacket[20];
+	char receivePacket[20];
 	char numString[5];
 	int currentNumber = 1;
 	int avgRTT;
@@ -31,6 +31,8 @@ int main(int argc, char **argv) {
 	int minRTT;
 	long unsigned int returnTS;
 	int32_t returnSN;
+	long timeout;
+	long currTime;
 
 		
 	if (argc != 2) {
@@ -45,7 +47,11 @@ int main(int argc, char **argv) {
 	struct sockaddr_in servaddr;
 	struct hostent *he;
 	struct timeval start, end;
-
+	
+	gettimeofday(&start, NULL);
+	timeout = (start.tv_sec * 1000 + start.tv_usec / 1000) + 5000;
+	
+	
 	int pid;
 	
 	
@@ -68,18 +74,23 @@ int main(int argc, char **argv) {
 	// Child - Receive data
 	if (pid == 0) {
 		while (1) {
+			gettimeofday(&start, NULL);
+			currTime = start.tv_sec * 1000 + start.tv_usec / 1000;
 			// timeout:
-			if (0) {
+			if (currTime > timeout) {
 				// break out of loop 
+				printf("\nReceiving timeout.\n");
+				break;
 			}
 
 			servlen = sizeof(servaddr);
-			if ((n = recvfrom(socketfd, (char *) receivePacket, 19, MSG_WAITALL, (struct sockaddr *) &servaddr, &servlen)) < 0) {
+			if ((n = recvfrom(socketfd, (char *) receivePacket, 20, MSG_WAITALL, (struct sockaddr *) &servaddr, &servlen)) < 0) {
 				perror("Error receiving packet");
 				exit(4);
 			}
 			
 			decodePacket(receivePacket);
+			bzero(receivePacket, 20);
 				
 
 		}
@@ -108,7 +119,8 @@ int main(int argc, char **argv) {
 	// Parent - Send data
 	else {
 
-		while (currentNumber < 10001) {
+		while (currentNumber < 10001 && currTime < timeout) {
+			printf("\nSending %d ...\n", currentNumber);
 			sprintf(numString, "%d", currentNumber);
 			
 			// msg length = 14 + strlen(message)
@@ -122,7 +134,7 @@ int main(int argc, char **argv) {
 				perror("Problem in sending the packet.");
 				exit(3);
 			}
-			
+			bzero(sendPacket, 20);
 			seqNum++;
 			currentNumber++;
 			
@@ -156,6 +168,7 @@ void buildPacket(int16_t msgLength, int32_t seqNum, long unsigned int timestamp,
 	memcpy(sendPacket + sizeof(msgLengthArr), seqNumArr, sizeof(seqNumArr));
 	memcpy(sendPacket + sizeof(seqNumArr) + sizeof(msgLengthArr), timeStampArr, sizeof(timeStampArr));
 	memcpy(sendPacket + sizeof(timeStampArr) + sizeof(seqNumArr) + sizeof(msgLengthArr), numString, strlen(numString));
+	sendPacket[19] = '\0';
 }
 
 void numToByteArray(long num, int size, char *bArray) {
@@ -167,5 +180,38 @@ void numToByteArray(long num, int size, char *bArray) {
 
 
 void decodePacket(char *receivePacket) {
-	
+	int16_t msgLength = 0;
+	int32_t seqNum = 0;
+	uint64_t timestamp = 0;
+	int i;
+
+	// Handle msgLength subarray:
+	for (i = 1; i >= 0; i--) {
+		msgLength += receivePacket[i];
+		if (i > 0) {
+			msgLength = msgLength << 8;	
+		}
+	}
+
+	// Handle seqNum subarray:
+	for (i = 5; i >= 2; i--) {
+		seqNum += receivePacket[i];
+		if (i > 2) {
+			seqNum = seqNum << 8;
+		}
+	}
+
+	// Handle timestamp subarray:
+	/*for (i = 13; i >= 6; i++) {
+		timestamp |= (long) receivePacket[i];
+		if (i > 6) {
+			timestamp = timestamp << 8;
+		}
+	}*/
+	receivePacket[19] = '\0';
+	printf("\nFrom the server:\n");
+	printf("Message: %s\n", receivePacket + 14);
+	printf("Packet Length: %d\n", msgLength);
+	//printf("Timestamp: %ld\n", timestamp);
+	printf("Sequence Number: %d\n", seqNum);
 }
