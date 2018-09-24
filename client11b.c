@@ -38,7 +38,6 @@ void buildPacket(int16_t msgLength, int32_t seqNum, long unsigned int timestamp,
 void decodePacket(char *receivePacket);
 
 int main(int argc, char **argv) {
-
 	// NEW VARIABLES FOR RFC11:
 	char message[MAXLINE];
 	char sendPacket[MAXPKTSZ];
@@ -60,7 +59,8 @@ int main(int argc, char **argv) {
 
 	int16_t msgLength;
 	int32_t seqNum = 0;
-	long unsigned int timestamp;
+	//long unsigned int timestamp;
+	uint64_t timestamp;
 	const unsigned int MAXSEQNUM = (long unsigned int) pow(2, 32) - 1;
 	if ((he = gethostbyname(argv[1])) == NULL) {
 		perror("Error in resolving server IP Address.");
@@ -95,7 +95,13 @@ int main(int argc, char **argv) {
 			}
 			msgLength = 2 + sizeof(seqNum) + sizeof(timestamp) + strlen(message);
 			buildPacket(msgLength, seqNum, timestamp, message, sendPacket);
-			printf("\nclient:%s\n", sendPacket + 14);
+
+			printf("\nFrom the client:\n");
+			printf("Message: %s\n", message);
+			printf("Packet Length: %d\n", msgLength);
+			printf("Timestamp: %ld\n", timestamp);
+			printf("Sequence Number: %d\n", seqNum);
+
 			if (sendto(socketfd, (char *) sendPacket, sizeof(sendPacket), MSG_CONFIRM, (struct sockaddr *) &servaddr, sizeof(servaddr)) < 0) {
 				perror("Problem in sending the packet.");
 				exit(4);
@@ -108,9 +114,7 @@ int main(int argc, char **argv) {
 			decodePacket(receivePacket);
 			gettimeofday(&end, NULL); // End "timer"
 			rtt = (end.tv_sec * 1000 + end.tv_usec / 1000) - (start.tv_sec * 1000 + start.tv_usec / 1000); // Calculate RTT	
-			printf("\nresponse size: %ld\n", strlen(receivePacket));
-			printf("\nserver:%s\n", receivePacket + 14);
-			printf("Round Trip Time (RTT) = %d ms\n", rtt);
+			printf("\nRound Trip Time (RTT) = %d ms\n", rtt);
 			
 			bzero(message, MAXLINE);
 			bzero(sendPacket, MAXPKTSZ);
@@ -133,12 +137,12 @@ void numToByteArray(long num, int size, char *bArray) {
 }
 
 
-void buildPacket(int16_t msgLength, int32_t seqNum, long unsigned int timestamp, char *msg, char *sendPacket) {
+void buildPacket(int16_t msgLength, int32_t seqNum, /*long unsigned int timestamp*/uint64_t timestamp, char *msg, char *sendPacket) {
 	// Create byte array variables:
 	char msgLengthArr[2];
 	char seqNumArr[4];
 	char timeStampArr[8];
-	printf("timestamp inside packet builder: %ld\n", timestamp);	
+
 	// Convert each part into its own byte array:
 	numToByteArray(msgLength, sizeof(msgLength),  msgLengthArr); 
 	numToByteArray(seqNum, sizeof(seqNum), seqNumArr); 
@@ -153,10 +157,10 @@ void buildPacket(int16_t msgLength, int32_t seqNum, long unsigned int timestamp,
 }
 
 void decodePacket(char *receivePacket) {
-	printf("Message: %s\n", receivePacket + 14);
 	int16_t msgLength = 0;
 	int32_t seqNum = 0;
 	//unsigned long timestamp = 0;
+	uint64_t timestamp = 0;
 	//char *msg;
 	int i;
 	//unsigned long test = 0;
@@ -179,15 +183,15 @@ void decodePacket(char *receivePacket) {
 
 	// Handle timestamp subarray:
 	/*for (i = 13; i >= 6; i++) {
-		timestamp += receivePacket[i];
+		timestamp |= (long) receivePacket[i];
 		if (i > 6) {
 			timestamp = timestamp << 8;
 		}
 	}*/
 	printf("\nFrom the server:\n");
-	printf("Message Length: %d\n", msgLength);
-	printf("Sequence Number: %d\n", seqNum);
-	//printf("Timestamp: %ld\n", timestamp);
 	printf("Message: %s\n", receivePacket + 14);
+	printf("Packet Length: %d\n", msgLength);
+	//printf("Timestamp: %ld\n", timestamp);
+	printf("Sequence Number: %d\n", seqNum);
 	
 }

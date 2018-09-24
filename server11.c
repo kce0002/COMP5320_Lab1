@@ -24,6 +24,11 @@
 #define SERVE_PORT 10010
 #define MAXLINE 1024
 
+int16_t getMsgLen(char *buf);
+int32_t getSeqNum(char *buf);
+long unsigned int getTimeStamp(char *buf);
+
+
 int main() {
 	// Variable declarations:
 	struct sockaddr_in cliaddr, servaddr;
@@ -59,13 +64,18 @@ int main() {
 			printf("!!!!!!!!!!!!\n");
 		}*/
 		buf[n] = '\0';
-		printf("Client: %s\n", buf + 14);
+		printf("From the client:\n");
+		printf("Message: %s\n", buf + 14);
+		printf("Packet Length: %d\n", getMsgLen(buf));
+		//printf("Timestamp: %ld\n", getTimeStamp(buf));
+		printf("Sequence Number: %d\n", getSeqNum(buf));
+
 		cliaddr.sin_family = AF_INET;
 		
 		// Send message back to client:
 //		sleep(1);
 		//sendto(socketfd, (char *)buf, n/*MAXLINE*/, /*MSG_CONFIRM*/MSG_DONTWAIT, (struct sockaddr *) &cliaddr, clilen);
-		printf("Sending: %s\n", buf);
+		printf("\nSending to client: %s\n\n", buf + 14);
 		if (sendto(socketfd, (char *)buf, n/*MAXLINE*/, MSG_CONFIRM, (struct sockaddr *) &cliaddr, clilen) < 0) {
 			perror("error in sendto");
 			exit(2);
@@ -80,4 +90,41 @@ int main() {
 	}
 
 	return 0;
+}
+
+
+int16_t getMsgLen(char *buf) {
+	int16_t len = 0;
+	int i;
+	for (i = 1; i >= 0; i--) {
+		len += buf[i];
+		if (i > 0) {
+			len = len << 8;
+		}
+	}
+	return len;
+}
+
+int32_t getSeqNum(char *buf) {
+	int32_t sn = 0;
+	int i;
+	for (i = 5; i >= 2; i--) {
+		sn += buf[i];
+		if (i > 2) {
+			sn = sn << 8;
+		}
+	}
+	return sn;
+}
+
+long unsigned int getTimeStamp(char *buf) {
+	long unsigned int timestamp = 0;
+	int i;
+	for (i = 13; i >= 6; i++) {
+		timestamp |= (int64_t) buf[i];
+		if (i > 6) {
+			timestamp = timestamp << 8;
+		}	
+	}
+	return timestamp;
 }
