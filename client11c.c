@@ -26,11 +26,11 @@ int main(int argc, char **argv) {
 	char receivePacket[20];
 	char numString[5];
 	int currentNumber = 1;
-	int avgRTT;
-	int maxRTT;
-	int minRTT;
-	long unsigned int returnTS;
-	int32_t returnSN;
+	//int avgRTT;
+	//int maxRTT;
+	//int minRTT;
+	//long unsigned int returnTS;
+	//int32_t returnSN;
 	long timeout;
 	long currTime;
 
@@ -40,13 +40,13 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 	
-	int i;
+	//int i;
 	int socketfd;
 	int n;
 	socklen_t servlen;
 	struct sockaddr_in servaddr;
 	struct hostent *he;
-	struct timeval start, end;
+	struct timeval start;
 	
 	gettimeofday(&start, NULL);
 	timeout = (start.tv_sec * 1000 + start.tv_usec / 1000) + 5000;
@@ -119,7 +119,7 @@ int main(int argc, char **argv) {
 	// Parent - Send data
 	else {
 
-		while (currentNumber < 10001 && currTime < timeout) {
+		while (currentNumber < 10001) {
 			printf("\nSending %d ...\n", currentNumber);
 			sprintf(numString, "%d", currentNumber);
 			
@@ -182,7 +182,7 @@ void numToByteArray(long num, int size, char *bArray) {
 void decodePacket(char *receivePacket) {
 	int16_t msgLength = 0;
 	int32_t seqNum = 0;
-	uint64_t timestamp = 0;
+	//uint64_t timestamp = 0;
 	int i;
 
 	// Handle msgLength subarray:

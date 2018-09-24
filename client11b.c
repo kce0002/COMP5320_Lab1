@@ -160,7 +160,7 @@ void decodePacket(char *receivePacket) {
 	int16_t msgLength = 0;
 	int32_t seqNum = 0;
 	//unsigned long timestamp = 0;
-	uint64_t timestamp = 0;
+	//uint64_t timestamp = 0;
 	//char *msg;
 	int i;
 	//unsigned long test = 0;
